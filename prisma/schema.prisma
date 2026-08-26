@@ -1,0 +1,90 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AcademicYear {
+  id         String      @id @default(uuid())
+  name       String
+  isArchived Boolean     @default(false)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  classes    ClassItem[]
+  students   Student[]
+  photos     ClassPhoto[]
+}
+
+model ClassItem {
+  id              String       @id @default(uuid())
+  name            String
+  level           String       // "SMP" | "SMK"
+  grade           Int          // 7,8,9,10,11,12
+  major           String?      // "PPLG" | "Retail" | "Project Officer" | "General"
+  academicYearId  String
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  homeroomTeacher String
+  tagline         String?
+  description     String?
+  coverImage      String?
+  classLogo       String?
+  instagramUrl    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  students        Student[]
+  photos          ClassPhoto[]
+}
+
+model Student {
+  id             String       @id @default(uuid())
+  nisn           String       @unique
+  password       String       // Hashed password
+  name           String
+  classId        String
+  classItem      ClassItem    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  avatar         String
+  quote          String       @default("")
+  ambition       String       @default("")
+  hobbies        String       @default("")
+  socialMedia    String       @default("")
+  email          String       @default("")
+  bio            String       @default("")
+  funAward       String       @default("")
+  isClassLeader  Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  photos         ClassPhoto[]
+}
+
+model ClassPhoto {
+  id             String       @id @default(uuid())
+  classId        String
+  classItem      ClassItem    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  uploaderId     String
+  uploader       Student      @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  uploaderName   String
+  url            String
+  caption        String
+  status         String       @default("pending") // "approved" | "pending" | "rejected"
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  nip       String   @unique
+  password  String   // Hashed password
+  name      String
+  role      String   @default("admin") // "admin" | "wali_kelas"
+  classId   String?  // Scoped class for Wali Kelas
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

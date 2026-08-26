@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-skye-gray: #9E9898;
+  --color-skye-gray-dark: #27272A;
+  --color-skye-gray-light: #F4F4F5;
+  --color-skye-gray-border: #E4E4E7;
+}
+
+:root {
+  --background: #F4F4F5;
+  --foreground: #18181B;
+}
+
+body {
+  background: #F4F4F5;
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  letter-spacing: -0.01em;
+}
+
+/* Custom transitions and scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4F4F5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9E9898;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #71717A;
+}
+
+/* Card hover elevation utility */
+.hover-lift {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+}
