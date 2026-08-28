@@ -5,17 +5,32 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useYearbookStore } from '@/lib/store';
 import { Header } from '@/components/Header';
-import { Shield, UserCheck, Eye, ArrowRight, CheckCircle2, Sparkles, BookOpen, Layers, Users, Camera } from 'lucide-react';
+import { Level } from '@/types';
+import { Shield, UserCheck, Eye, ArrowRight, CheckCircle2, Sparkles, BookOpen, Layers, Users, Camera, KeyRound, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const { session, loginAs, logout, isLoaded, students, classes, photos } = useYearbookStore();
 
-  const [nip, setNip] = useState('admin');
+  // Selected Akun Admin / Pengelola (Initial empty)
+  const [nip, setNip] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [selectedStudentId, setSelectedStudentId] = useState('std-dimas');
+
+  // Selected Akun Siswa (Initial empty)
+  const [selectedStudentLevel, setSelectedStudentLevel] = useState<Level | 'ALL'>('ALL');
+  const [selectedStudentClassId, setSelectedStudentClassId] = useState<string>('ALL');
+  const [selectedStudentId, setSelectedStudentId] = useState('');
   const [studentNisn, setStudentNisn] = useState('');
+
   const [loginError, setLoginError] = useState('');
+
+  // Forgot Password Modal States
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [forgotNisn, setForgotNisn] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [isForgotSubmitting, setIsForgotSubmitting] = useState(false);
 
   useEffect(() => {
     document.title = "Login Pengguna | Skye Digital Yearbook";
@@ -32,10 +47,22 @@ export default function LoginPage() {
     );
   }
 
+  // Filter students based on Level & Class dropdown
+  const filteredStudentOptions = students.filter((s) => {
+    const classItem = classes.find((c) => c.id === s.classId);
+    if (selectedStudentLevel !== 'ALL' && classItem?.level !== selectedStudentLevel) return false;
+    if (selectedStudentClassId !== 'ALL' && s.classId !== selectedStudentClassId) return false;
+    return true;
+  });
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
-    const adminNip = nip.trim() || 'admin';
+
+    if (!nip) {
+      setLoginError('Silakan pilih akun pengelola terlebih dahulu');
+      return;
+    }
 
     if (!adminPassword.trim()) {
       setLoginError('Password pengelola wajib diisi');
@@ -47,8 +74,8 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          role: adminNip === 'admin' ? 'admin' : 'wali_kelas',
-          usernameOrNisn: adminNip,
+          role: nip === 'admin' ? 'admin' : 'wali_kelas',
+          usernameOrNisn: nip,
           password: adminPassword.trim(),
         }),
       });
@@ -69,6 +96,12 @@ export default function LoginPage() {
   const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+
+    if (!selectedStudentId) {
+      setLoginError('Silakan pilih nama siswa terlebih dahulu');
+      return;
+    }
+
     const targetStudent = students.find((s) => s.id === selectedStudentId);
     if (!targetStudent) {
       setLoginError('Siswa tidak ditemukan');
@@ -102,6 +135,44 @@ export default function LoginPage() {
       router.push(`/class/${targetStudent.classId}`);
     } catch {
       setLoginError('Gagal terhubung ke server');
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+
+    if (!forgotNisn.trim() || !forgotNewPassword.trim()) {
+      setForgotError('NISN dan Password Baru wajib diisi');
+      return;
+    }
+
+    setIsForgotSubmitting(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nisn: forgotNisn.trim(),
+          newPassword: forgotNewPassword.trim(),
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        setForgotError(json.error || 'Gagal mengirimkan permintaan riset password.');
+        setIsForgotSubmitting(false);
+        return;
+      }
+
+      setForgotSuccess(json.message);
+      setForgotNisn('');
+      setForgotNewPassword('');
+    } catch {
+      setForgotError('Terjadi kesalahan koneksi.');
+    } finally {
+      setIsForgotSubmitting(false);
     }
   };
 
@@ -144,7 +215,7 @@ export default function LoginPage() {
           </h1>
 
           <p className="text-base sm:text-lg text-gray-600 font-medium leading-relaxed max-w-2xl mx-auto">
-            Pilih peran Anda di bawah ini untuk mengedit biodata, mengunggah foto momen kelas, atau mengelola struktur album sekolah.
+            Pilih akun dan masukkan password Anda di bawah ini untuk masuk ke halaman album digital.
           </p>
 
           {/* QUICK STATS COUNTER */}
@@ -200,7 +271,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* STUDENT CARD */}
+          {/* STUDENT CARD (WITH FILTER & FORGOT PASSWORD) */}
           <div className="bg-white border border-gray-300 hover:border-[#9E9898] rounded-3xl p-7 flex flex-col justify-between transition-all duration-300 shadow-md hover:shadow-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 bg-[#9E9898] text-[10px] font-extrabold tracking-widest text-white px-3.5 py-1.5 rounded-bl-2xl uppercase">
               Area Siswa / Ketua Kelas
@@ -218,15 +289,57 @@ export default function LoginPage() {
               </div>
 
               {/* Student Login Form */}
-              <form onSubmit={handleStudentLogin} className="space-y-3 pt-2">
+              <form onSubmit={handleStudentLogin} className="space-y-3 pt-1">
+                
+                {/* FILTER LEVEL & KELAS SISWA */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Filter Level:</label>
+                    <select
+                      value={selectedStudentLevel}
+                      onChange={(e) => {
+                        setSelectedStudentLevel(e.target.value as Level | 'ALL');
+                        setSelectedStudentId('');
+                      }}
+                      className="w-full bg-slate-50 border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
+                    >
+                      <option value="ALL">Semua Level</option>
+                      <option value="SMP">SMP Skye</option>
+                      <option value="SMK">SMK Skye</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Filter Kelas:</label>
+                    <select
+                      value={selectedStudentClassId}
+                      onChange={(e) => {
+                        setSelectedStudentClassId(e.target.value);
+                        setSelectedStudentId('');
+                      }}
+                      className="w-full bg-slate-50 border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
+                    >
+                      <option value="ALL">Semua Kelas</option>
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* SELECT NAMA SISWA (Awal Kosong) */}
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Pilih Akun Siswa:</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Pilih Nama Siswa:</label>
                   <select
                     value={selectedStudentId}
                     onChange={(e) => setSelectedStudentId(e.target.value)}
-                    className="w-full bg-slate-50 border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
+                    className="w-full bg-slate-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
+                    required
                   >
-                    {students.map((s) => (
+                    <option value="">-- Silakan Pilih Nama Siswa --</option>
+                    {filteredStudentOptions.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name} {s.isClassLeader ? '(Ketua Kelas)' : ''} - {s.nisn}
                       </option>
@@ -245,6 +358,22 @@ export default function LoginPage() {
                   />
                 </div>
 
+                {/* LINK LUPA PASSWORD */}
+                <div className="flex justify-end pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotError('');
+                      setForgotSuccess('');
+                      setIsForgotModalOpen(true);
+                    }}
+                    className="text-xs font-bold text-[#9E9898] hover:text-[#27272A] flex items-center space-x-1 transition-colors"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Lupa Password Siswa?</span>
+                  </button>
+                </div>
+
                 {loginError && <p className="text-xs text-red-600 font-bold">{loginError}</p>}
                 <button
                   type="submit"
@@ -257,7 +386,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* ADMIN CARD */}
+          {/* ADMIN CARD (Awal Kosong) */}
           <div className="bg-white border border-gray-300 hover:border-[#9E9898] rounded-3xl p-7 flex flex-col justify-between transition-all duration-300 shadow-md hover:shadow-xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 bg-[#27272A] text-[10px] font-extrabold tracking-widest text-white px-3.5 py-1.5 rounded-bl-2xl uppercase">
               Admin / Wali Kelas
@@ -282,7 +411,9 @@ export default function LoginPage() {
                     value={nip}
                     onChange={(e) => setNip(e.target.value)}
                     className="w-full bg-slate-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
+                    required
                   >
+                    <option value="">-- Silakan Pilih Akun Pengelola --</option>
                     <option value="admin">Super Admin Sekolah (Semua Kelas)</option>
                     <option value="wali_pplg">Bu Rani (Wali Kelas 11 PPLG)</option>
                     <option value="wali_retail">Pak Agus (Wali Kelas 10 Retail)</option>
@@ -336,6 +467,93 @@ export default function LoginPage() {
         </div>
 
       </main>
+
+      {/* MODAL LUPA PASSWORD SISWA */}
+      {isForgotModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-300 space-y-5 relative animate-in fade-in zoom-in duration-200">
+            
+            <button
+              onClick={() => setIsForgotModalOpen(false)}
+              className="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="border-b border-gray-200 pb-3">
+              <span className="text-[10px] font-black uppercase tracking-widest bg-[#9E9898] text-white px-2.5 py-0.5 rounded-md">
+                Klaim Lupa Password
+              </span>
+              <h3 className="text-xl font-black text-[#27272A] mt-1">Permintaan Riset Password Siswa</h3>
+              <p className="text-xs text-gray-500 font-medium mt-1">
+                Masukkan NISN Anda dan password baru yang diinginkan. Permintaan akan dikirimkan ke Admin / Wali Kelas untuk disetujui.
+              </p>
+            </div>
+
+            {forgotSuccess && (
+              <div className="p-4 bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold rounded-2xl flex items-start space-x-2">
+                <CheckCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <span>{forgotSuccess}</span>
+              </div>
+            )}
+
+            {forgotError && (
+              <div className="p-3.5 bg-red-100 border border-red-300 text-red-800 text-xs font-bold rounded-2xl flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{forgotError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black uppercase text-gray-700 mb-1">
+                  NISN Siswa *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Masukkan NISN siswa (cth: 0071234567)"
+                  value={forgotNisn}
+                  onChange={(e) => setForgotNisn(e.target.value)}
+                  className="w-full bg-slate-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-black uppercase text-gray-700 mb-1">
+                  Password Baru Yang Diinginkan *
+                </label>
+                <input
+                  type="password"
+                  placeholder="Masukkan password baru..."
+                  value={forgotNewPassword}
+                  onChange={(e) => setForgotNewPassword(e.target.value)}
+                  className="w-full bg-slate-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
+                  required
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotModalOpen(false)}
+                  className="px-4 py-2.5 bg-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-300"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isForgotSubmitting}
+                  className="px-6 py-2.5 bg-[#9E9898] text-white text-xs font-extrabold rounded-xl hover:bg-[#888282] shadow-sm disabled:opacity-50"
+                >
+                  {isForgotSubmitting ? 'Mengirim...' : 'Kirim Permintaan Riset'}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
 
       <footer className="border-t border-gray-300 py-6 bg-[#9E9898] text-center text-xs text-white font-semibold">
         © 2026 SMP-SMK Skye Digitalpreneur. Skye Digital Yearbook Platform.

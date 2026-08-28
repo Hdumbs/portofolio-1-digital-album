@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useYearbookStore } from '@/lib/store';
 import { Header } from '@/components/Header';
 import { ClassItem, Level, Major } from '@/types';
-import { Shield, Plus, Archive, CheckCircle, XCircle, Trash2, Edit3, ShieldAlert, Layers, RefreshCw, X, Image as ImageIcon, BookOpen } from 'lucide-react';
+import { Shield, Plus, Archive, CheckCircle, XCircle, Trash2, Edit3, ShieldAlert, Layers, RefreshCw, X, Image as ImageIcon, BookOpen, KeyRound } from 'lucide-react';
 import { InstagramIcon } from '@/components/InstagramIcon';
 
 export default function AdminDashboardPage() {
@@ -27,7 +27,20 @@ export default function AdminDashboardPage() {
     resetToDefault
   } = useYearbookStore();
 
-  const [activeTab, setActiveTab] = useState<'classes' | 'moderation' | 'archiving'>('classes');
+  const [activeTab, setActiveTab] = useState<'classes' | 'moderation' | 'archiving' | 'resets'>('classes');
+  const [passwordResets, setPasswordResets] = useState<any[]>([]);
+
+  const fetchPasswordResets = async () => {
+    try {
+      const res = await fetch('/api/admin/password-resets');
+      if (res.ok) {
+        const data = await res.json();
+        setPasswordResets(data);
+      }
+    } catch (e) {
+      console.warn('Fetch password resets error:', e);
+    }
+  };
 
   // Modal State for Class Form
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,6 +65,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     document.title = "Dashboard Admin & Moderasi | Skye Digital Yearbook";
+    fetchPasswordResets();
   }, []);
 
   if (!isLoaded) {
@@ -200,6 +214,25 @@ export default function AdminDashboardPage() {
     closeModal();
   };
 
+  const handleResetAction = async (requestId: string, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetch('/api/admin/password-resets', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        alert(json.message);
+        fetchPasswordResets();
+      } else {
+        alert(json.error || 'Gagal memproses riset password.');
+      }
+    } catch {
+      alert('Terjadi kesalahan jaringan.');
+    }
+  };
+
   const handleArchiveYear = (yearId: string) => {
     if (confirm('Apakah Anda yakin ingin mengarsipkan tahun ajaran ini? Seluruh kelas dan foto akan dipindahkan ke tab Arsip dan terlindungi dari pengeditan siswa.')) {
       archiveAcademicYear(yearId);
@@ -253,6 +286,19 @@ export default function AdminDashboardPage() {
               {pendingPhotos.length > 0 && (
                 <span className="ml-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-[10px] font-black">
                   {pendingPhotos.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('resets')}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all relative ${
+                activeTab === 'resets' ? 'bg-white text-[#27272A] shadow-sm' : 'text-white hover:bg-white/20'
+              }`}
+            >
+              Riset Password
+              {passwordResets.filter((r) => r.status === 'pending').length > 0 && (
+                <span className="ml-1.5 px-2 py-0.5 bg-amber-500 text-white rounded-full text-[10px] font-black">
+                  {passwordResets.filter((r) => r.status === 'pending').length}
                 </span>
               )}
             </button>
@@ -751,6 +797,101 @@ export default function AdminDashboardPage() {
                   Tambah Tahun Ajaran
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: PERMINTAAN RISET PASSWORD SISWA */}
+        {activeTab === 'resets' && (
+          <div className="space-y-6">
+            <div className="bg-white p-5 rounded-3xl border border-gray-300 shadow-sm">
+              <h2 className="text-lg font-black text-[#27272A] flex items-center space-x-2">
+                <KeyRound className="w-5 h-5 text-[#9E9898]" />
+                <span>Panel Konfirmasi Riset Password Siswa</span>
+              </h2>
+              <p className="text-xs text-gray-500 font-medium mt-1">
+                Setujui atau tolak permintaan riset password baru dari siswa yang lupa password.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-xs font-black text-[#9E9898] uppercase tracking-wider">
+                Permintaan Menunggu Konfirmasi ({passwordResets.filter((r) => r.status === 'pending').length})
+              </h3>
+
+              {passwordResets.filter((r) => r.status === 'pending').length === 0 ? (
+                <div className="bg-white p-8 rounded-3xl border border-gray-300 text-center text-xs text-gray-500 font-bold shadow-sm">
+                  Tidak ada permintaan riset password yang sedang pending.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {passwordResets
+                    .filter((r) => r.status === 'pending')
+                    .map((item) => (
+                      <div key={item.id} className="bg-white border border-amber-300 rounded-3xl p-5 shadow-sm flex flex-col justify-between space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300">
+                              Klaim Lupa Password
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-semibold">{new Date(item.createdAt).toLocaleDateString('id-ID')}</span>
+                          </div>
+                          <h4 className="text-base font-black text-[#27272A]">{item.studentName}</h4>
+                          <p className="text-xs text-gray-600 font-semibold">NISN: <strong>{item.nisn}</strong> • Kelas: {item.className}</p>
+                          <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-xs">
+                            <span className="text-[10px] text-gray-500 font-bold block uppercase">Password Baru Yang Diminta:</span>
+                            <code className="font-mono text-xs font-black text-emerald-700">{item.newPassword}</code>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2 pt-2 border-t border-gray-100">
+                          <button
+                            onClick={() => handleResetAction(item.id, 'reject')}
+                            className="flex-1 py-2 bg-red-100 text-red-800 border border-red-300 hover:bg-red-200 text-xs font-extrabold rounded-xl transition-colors flex items-center justify-center space-x-1"
+                          >
+                            <XCircle className="w-3.5 h-3.5" />
+                            <span>Tolak</span>
+                          </button>
+                          <button
+                            onClick={() => handleResetAction(item.id, 'approve')}
+                            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl transition-colors flex items-center justify-center space-x-1 shadow-sm"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Setujui Password</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            {/* Approved/Rejected History */}
+            <div className="space-y-4 pt-6 border-t border-gray-300">
+              <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider">
+                Riwayat Konfirmasi Riset Password ({passwordResets.filter((r) => r.status !== 'pending').length})
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {passwordResets
+                  .filter((r) => r.status !== 'pending')
+                  .map((item) => (
+                    <div key={item.id} className="bg-white border border-gray-300 p-4 rounded-2xl flex items-center justify-between text-xs">
+                      <div>
+                        <h5 className="font-black text-[#27272A]">{item.studentName}</h5>
+                        <p className="text-[10px] text-gray-500 font-semibold">NISN: {item.nisn} ({item.className})</p>
+                      </div>
+                      <span
+                        className={`text-[10px] font-black px-2.5 py-0.5 rounded-md ${
+                          item.status === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-red-100 text-red-800 border border-red-300'
+                        }`}
+                      >
+                        {item.status === 'approved' ? 'Disetujui' : 'Ditolak'}
+                      </span>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
