@@ -25,8 +25,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const session = await getSessionFromCookies();
-  if (session?.role !== 'admin') {
-    return NextResponse.json({ error: 'Akses ditolak (Harus Admin)' }, { status: 403 });
+  if (session?.role !== 'admin' && session?.role !== 'wali_kelas') {
+    return NextResponse.json({ error: 'Akses ditolak (Harus Admin / Wali Kelas)' }, { status: 403 });
   }
 
   const body = await request.json();

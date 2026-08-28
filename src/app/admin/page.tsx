@@ -24,7 +24,8 @@ export default function AdminDashboardPage() {
     addAcademicYear,
     updatePhotoStatus,
     deletePhoto,
-    resetToDefault
+    resetToDefault,
+    refreshData,
   } = useYearbookStore();
 
   const [activeTab, setActiveTab] = useState<'classes' | 'moderation' | 'archiving' | 'resets'>('classes');
@@ -154,12 +155,17 @@ export default function AdminDashboardPage() {
     setClassError('');
   };
 
-  const handleSaveClass = (e: React.FormEvent) => {
+  const handleSaveClass = async (e: React.FormEvent) => {
     e.preventDefault();
     setClassError('');
 
     if (!className.trim() || !homeroomTeacher.trim()) {
       setClassError('Nama kelas dan Wali kelas wajib diisi.');
+      return;
+    }
+
+    if (!activeAcademicYear) {
+      setClassError('Tahun ajaran aktif tidak ditemukan. Harap buat/aktifkan tahun ajaran dulu.');
       return;
     }
 
@@ -182,7 +188,7 @@ export default function AdminDashboardPage() {
     }
 
     if (editingClass) {
-      updateClass({
+      await updateClass({
         ...editingClass,
         name: className.trim(),
         level: classLevel,
@@ -196,7 +202,7 @@ export default function AdminDashboardPage() {
         coverImage: coverImage.trim() || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80',
       });
     } else {
-      addClass({
+      await addClass({
         name: className.trim(),
         level: classLevel,
         grade: Number(classGrade) || 10,
@@ -211,6 +217,7 @@ export default function AdminDashboardPage() {
       });
     }
 
+    await refreshData();
     closeModal();
   };
 
