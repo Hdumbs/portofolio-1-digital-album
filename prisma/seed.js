@@ -13,7 +13,7 @@ async function main() {
   await prisma.academicYear.deleteMany();
   await prisma.adminUser.deleteMany();
 
-  // Create Super Admin & Wali Kelas Accounts
+  // Create Super Admin Account
   const adminPassword = await bcrypt.hash('admin123', 10);
   await prisma.adminUser.create({
     data: {
@@ -21,26 +21,6 @@ async function main() {
       name: 'Super Admin Sekolah',
       password: adminPassword,
       role: 'admin',
-    },
-  });
-
-  await prisma.adminUser.create({
-    data: {
-      nip: 'wali_pplg',
-      name: 'Bu Rani, S.Kom (Wali Kelas 11 PPLG)',
-      password: adminPassword,
-      role: 'wali_kelas',
-      classId: 'class-11-pplg-25',
-    },
-  });
-
-  await prisma.adminUser.create({
-    data: {
-      nip: 'wali_retail',
-      name: 'Pak Agus, M.M (Wali Kelas 10 Retail)',
-      password: adminPassword,
-      role: 'wali_kelas',
-      classId: 'class-10-retail-25',
     },
   });
 

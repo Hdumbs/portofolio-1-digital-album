@@ -29,22 +29,12 @@ export async function POST(request: Request) {
       const nip = usernameOrNisn || 'admin';
       let admin = await prisma.adminUser.findUnique({ where: { nip } });
 
-      // Fallback for default seed accounts if db is initialized without seed
-      if (!admin) {
+      // Fallback for default super admin if db is initialized without seed
+      if (!admin && nip === 'admin') {
         const hashedPassword = await bcrypt.hash('admin123', 10);
-        if (nip === 'admin') {
-          admin = await prisma.adminUser.create({
-            data: { nip: 'admin', name: 'Super Admin Sekolah', password: hashedPassword, role: 'admin' },
-          });
-        } else if (nip === 'wali_pplg') {
-          admin = await prisma.adminUser.create({
-            data: { nip: 'wali_pplg', name: 'Bu Rani, S.Kom (Wali Kelas 11 PPLG)', password: hashedPassword, role: 'wali_kelas', classId: 'class-11-pplg-25' },
-          });
-        } else if (nip === 'wali_retail') {
-          admin = await prisma.adminUser.create({
-            data: { nip: 'wali_retail', name: 'Pak Agus, M.M (Wali Kelas 10 Retail)', password: hashedPassword, role: 'wali_kelas', classId: 'class-10-retail-25' },
-          });
-        }
+        admin = await prisma.adminUser.create({
+          data: { nip: 'admin', name: 'Super Admin Sekolah', password: hashedPassword, role: 'admin' },
+        });
       }
 
       if (!admin) {

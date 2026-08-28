@@ -271,7 +271,7 @@ export default function StudentDashboardPage() {
                 <div className="md:col-span-2">
                   <label className="block text-xs font-black uppercase text-gray-700 mb-1 flex items-center space-x-1">
                     <Quote className="w-3.5 h-3.5 text-[#9E9898]" />
-                    <span>Kata-kata Perpisahan / Quote</span>
+                    <span>Quote</span>
                   </label>
                   <textarea
                     rows={2}

@@ -488,7 +488,7 @@ export const YearbookView: React.FC<YearbookViewProps> = ({
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                 <div className="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center space-x-1 mb-1">
                   <Quote className="w-3.5 h-3.5 text-[#9E9898]" />
-                  <span>Kata-kata Perpisahan / Quote</span>
+                  <span>Quote</span>
                 </div>
                 <p className="text-sm font-semibold italic text-gray-900">
                   &quot;{detailStudent.quote || 'Belum diisi'}&quot;
