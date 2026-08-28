@@ -121,11 +121,11 @@ export const Header: React.FC<HeaderProps> = ({ session, onLogout }) => {
             </button>
           ) : (
             <Link
-              href="/"
-              className="flex items-center space-x-1 px-3.5 py-2 rounded-xl text-xs font-black bg-white text-[#9E9898] hover:bg-gray-100 transition-all shadow-sm"
+              href="/login"
+              className="flex items-center space-x-1 px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-[#27272A] text-white hover:bg-[#18181B] transition-all shadow-md"
             >
               <Lock className="w-3.5 h-3.5 text-[#9E9898]" />
-              <span>Login</span>
+              <span>Login Pengguna</span>
             </Link>
           )}
         </div>
