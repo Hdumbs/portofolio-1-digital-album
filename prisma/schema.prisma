@@ -54,6 +54,7 @@ model Student {
   hobbies        String       @default("")
   socialMedia    String       @default("")
   email          String       @default("")
+  phone          String       @default("")
   bio            String       @default("")
   funAward       String       @default("")
   isClassLeader  Boolean      @default(false)

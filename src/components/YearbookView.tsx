@@ -517,6 +517,11 @@ export const YearbookView: React.FC<YearbookViewProps> = ({
                 </div>
               </div>
 
+              <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                <span className="text-[10px] font-black text-gray-500 uppercase">Nomor Telepon / WA</span>
+                <p className="text-xs font-bold text-[#27272A] mt-0.5">{detailStudent.phone || '-'}</p>
+              </div>
+
               {detailStudent.bio && (
                 <div className="bg-gray-50 p-3 rounded-xl border border-gray-200">
                   <span className="text-[10px] font-black text-gray-500 uppercase">Tentang Saya</span>

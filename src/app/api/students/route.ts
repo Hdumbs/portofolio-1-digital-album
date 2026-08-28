@@ -17,6 +17,7 @@ export async function GET(request: Request) {
       hobbies: true,
       socialMedia: true,
       email: true,
+      phone: true,
       bio: true,
       funAward: true,
       isClassLeader: true,
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   const session = await getSessionFromCookies();
   const body = await request.json();
-  const { id, name, avatar, quote, ambition, hobbies, socialMedia, email, bio, funAward } = body;
+  const { id, name, avatar, quote, ambition, hobbies, socialMedia, email, phone, bio, funAward } = body;
 
   if (!id) {
     return NextResponse.json({ error: 'ID Siswa diperlukan' }, { status: 400 });
@@ -61,6 +62,7 @@ export async function PUT(request: Request) {
       ...(hobbies !== undefined && { hobbies }),
       ...(socialMedia !== undefined && { socialMedia }),
       ...(email !== undefined && { email }),
+      ...(phone !== undefined && { phone }),
       ...(bio !== undefined && { bio }),
       ...(funAward !== undefined && { funAward }),
     },

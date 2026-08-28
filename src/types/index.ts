@@ -40,6 +40,7 @@ export interface Student {
   hobbies: string;
   socialMedia: string;
   email: string;
+  phone?: string;
   bio?: string;
   funAward?: string; // e.g. "Ter-Coding Master", "Ter-Estetik UI/UX", "Ter-Solutif"
   isClassLeader?: boolean;

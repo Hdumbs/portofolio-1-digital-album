@@ -59,13 +59,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoginError('');
 
-    if (!nip) {
-      setLoginError('Silakan pilih akun pengelola terlebih dahulu');
+    if (!nip.trim()) {
+      setLoginError('NIP / Username Pengelola wajib diisi');
       return;
     }
 
     if (!adminPassword.trim()) {
-      setLoginError('Password pengelola wajib diisi');
+      setLoginError('Password Pengelola wajib diisi');
       return;
     }
 
@@ -74,15 +74,15 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          role: nip === 'admin' ? 'admin' : 'wali_kelas',
-          usernameOrNisn: nip,
+          role: nip.trim() === 'admin' ? 'admin' : 'wali_kelas',
+          usernameOrNisn: nip.trim(),
           password: adminPassword.trim(),
         }),
       });
 
       const json = await res.json();
       if (!res.ok) {
-        setLoginError(json.error || 'Password pengelola salah');
+        setLoginError(json.error || 'NIP atau Password Pengelola salah');
         return;
       }
 
@@ -97,14 +97,8 @@ export default function LoginPage() {
     e.preventDefault();
     setLoginError('');
 
-    if (!selectedStudentId) {
-      setLoginError('Silakan pilih nama siswa terlebih dahulu');
-      return;
-    }
-
-    const targetStudent = students.find((s) => s.id === selectedStudentId);
-    if (!targetStudent) {
-      setLoginError('Siswa tidak ditemukan');
+    if (!selectedStudentId.trim()) {
+      setLoginError('NISN / ID Siswa wajib diisi');
       return;
     }
 
@@ -119,20 +113,19 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           role: 'student',
-          studentId: targetStudent.id,
-          usernameOrNisn: targetStudent.nisn,
+          usernameOrNisn: selectedStudentId.trim(),
           password: studentNisn.trim(),
         }),
       });
 
       const json = await res.json();
       if (!res.ok) {
-        setLoginError(json.error || 'Password siswa salah');
+        setLoginError(json.error || 'NISN atau Password siswa salah');
         return;
       }
 
       await loginAs(json.session);
-      router.push(`/class/${targetStudent.classId}`);
+      router.push(`/class/${json.session.classId}`);
     } catch {
       setLoginError('Gagal terhubung ke server');
     }
@@ -290,64 +283,20 @@ export default function LoginPage() {
 
               {/* Student Login Form */}
               <form onSubmit={handleStudentLogin} className="space-y-3 pt-1">
-                
-                {/* FILTER LEVEL & KELAS SISWA */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Filter Level:</label>
-                    <select
-                      value={selectedStudentLevel}
-                      onChange={(e) => {
-                        setSelectedStudentLevel(e.target.value as Level | 'ALL');
-                        setSelectedStudentId('');
-                      }}
-                      className="w-full bg-slate-50 border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
-                    >
-                      <option value="ALL">Semua Level</option>
-                      <option value="SMP">SMP Skye</option>
-                      <option value="SMK">SMK Skye</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Filter Kelas:</label>
-                    <select
-                      value={selectedStudentClassId}
-                      onChange={(e) => {
-                        setSelectedStudentClassId(e.target.value);
-                        setSelectedStudentId('');
-                      }}
-                      className="w-full bg-slate-50 border border-gray-300 rounded-xl px-2.5 py-1.5 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
-                    >
-                      <option value="ALL">Semua Kelas</option>
-                      {classes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* SELECT NAMA SISWA (Awal Kosong) */}
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Pilih Nama Siswa:</label>
-                  <select
+                  <label className="block text-[11px] font-bold text-gray-700 mb-1">NISN / Nomor ID Siswa:</label>
+                  <input
+                    type="text"
+                    placeholder="Masukkan NISN (cth: 0071234567)"
                     value={selectedStudentId}
                     onChange={(e) => setSelectedStudentId(e.target.value)}
                     className="w-full bg-slate-50 border border-gray-300 rounded-xl px-3 py-2 text-xs text-gray-800 font-bold focus:outline-none focus:border-[#9E9898]"
                     required
-                  >
-                    <option value="">-- Silakan Pilih Nama Siswa --</option>
-                    {filteredStudentOptions.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.isClassLeader ? '(Ketua Kelas)' : ''} - {s.nisn}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 <div>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Password Siswa:</label>
                   <input
                     type="password"
                     placeholder="Password Siswa (Default: 123456)"

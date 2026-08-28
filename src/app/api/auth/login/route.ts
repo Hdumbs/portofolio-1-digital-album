@@ -87,16 +87,24 @@ export async function POST(request: Request) {
 
     // Student & Class Leader Login
     if (role === 'student' || role === 'class_leader') {
-      let student = null;
+      const identifier = studentId || usernameOrNisn;
 
-      if (studentId) {
-        student = await prisma.student.findUnique({ where: { id: studentId } });
-      } else if (usernameOrNisn) {
-        student = await prisma.student.findUnique({ where: { nisn: usernameOrNisn } });
+      if (!identifier) {
+        return NextResponse.json({ error: 'NISN / ID Siswa wajib diisi' }, { status: 400 });
       }
 
+      // Search student by NISN or database ID
+      const student = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { id: identifier },
+            { nisn: identifier },
+          ],
+        },
+      });
+
       if (!student) {
-        return NextResponse.json({ error: 'Siswa tidak ditemukan' }, { status: 404 });
+        return NextResponse.json({ error: `Siswa dengan NISN/ID "${identifier}" tidak ditemukan` }, { status: 404 });
       }
 
       if (!password) {

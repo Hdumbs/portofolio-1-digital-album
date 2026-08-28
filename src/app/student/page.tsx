@@ -41,6 +41,7 @@ export default function StudentDashboardPage() {
         hobbies: student.hobbies,
         socialMedia: student.socialMedia,
         email: student.email,
+        phone: student.phone,
         bio: student.bio,
         avatar: student.avatar,
         funAward: student.funAward,
@@ -345,6 +346,19 @@ export default function StudentDashboardPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-800 font-medium focus:outline-none focus:border-[#9E9898]"
                     placeholder="nama@skye.sch.id"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase text-gray-700 mb-1">
+                    Nomor Telepon / WhatsApp
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.phone || ''}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-xs text-gray-800 font-medium focus:outline-none focus:border-[#9E9898]"
+                    placeholder="081234567890"
                   />
                 </div>
 
